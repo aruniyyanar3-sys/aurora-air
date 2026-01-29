@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h1>Admin Panel</h1>
+    <p>Manage datasets, train models, and view system logs</p>
+</div>
+
+<div class="admin-actions">
+    <form method="POST" action="{{ url_for('train_all_models') }}" style="display: inline;">
+        <button type="submit" class="btn btn-primary" onclick="return confirm('This will retrain all models. Continue?')">
+            🤖 Train All Models
+        </button>
+    </form>
+</div>
+
+<div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Upload Dataset</h3>
+        </div>
+        <form method="POST" action="{{ url_for('upload_dataset') }}" enctype="multipart/form-data">
+            <div id="uploadZone" class="upload-zone">
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">Click or drag CSV file here</p>
+                <p style="color: var(--aurora-text-muted); font-size: 0.9rem;">
+                    Required columns: Temperature, Humidity, PM2_5, PM10, CO, NO2, SO2, O3, AQI
+                </p>
+                <input type="file" id="csvFile" name="file" accept=".csv" style="display: none;" required>
+            </div>
+            <button type="submit" class="btn btn-success btn-block mt-3">
+                Upload & Process
+            </button>
+        </form>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Quick Stats</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+            <div class="metric-item">
+                <div class="metric-value">{{ stats.total_users or 0 }}</div>
+                <div class="metric-label">Total Users</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ stats.data_records or 0 }}</div>
+                <div class="metric-label">Data Records</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ stats.total_predictions or 0 }}</div>
+                <div class="metric-label">Total Predictions</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ stats.models_trained or 0 }}</div>
+                <div class="metric-label">Models Trained</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 30px;">
+    <div class="card-header">
+        <h3 class="card-title">Recent Predictions Log</h3>
+    </div>
+    {% if predictions_log %}
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Model</th>
+                    <th>Predicted AQI</th>
+                    <th>Category</th>
+                    <th>Timestamp (IST)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in predictions_log %}
+                <tr>
+                    <td>{{ log.id }}</td>
+                    <td>{{ log.user_email or 'Unknown' }}</td>
+                    <td>{{ log.modelused }}</td>
+                    <td>{{ "%.2f"|format(log.predictedaqi) }}</td>
+                    <td>
+                        <span class="badge" style="background: {{ log.color }}; color: white;">
+                            {{ log.category }}
+                        </span>
+                    </td>
+                    <td>{{ log.createdat.strftime('%d %b %Y, %H:%M:%S') if log.createdat else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="text-align: center; padding: 30px; color: var(--aurora-text-secondary);">
+        No predictions logged yet.
+    </p>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-top: 30px;">
+    <div class="card-header">
+        <h3 class="card-title">Registered Users</h3>
+    </div>
+    {% if users_list %}
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Role</th>
+                    <th>Registered (IST)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users_list %}
+                <tr>
+                    <td>{{ user.userid }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.mobile }}</td>
+                    <td>
+                        {% if user.role == 'Admin' %}
+                        <span class="badge badge-admin">Admin</span>
+                        {% else %}
+                        <span class="badge badge-user">User</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.createdat.strftime('%d %b %Y, %H:%M') if user.createdat else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="text-align: center; padding: 30px; color: var(--aurora-text-secondary);">
+        No users registered yet.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

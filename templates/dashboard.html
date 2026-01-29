@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h1>Dashboard</h1>
+    <p>Welcome to Aurora Air - Your intelligent air quality prediction system</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value">{{ stats.total_predictions or 0 }}</div>
+        <div class="stat-label">Total Predictions</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-value">{{ stats.models_trained or 0 }}</div>
+        <div class="stat-label">Models Trained</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">📈</div>
+        <div class="stat-value">{{ stats.data_records or 0 }}</div>
+        <div class="stat-label">Training Records</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value">{{ stats.total_users or 0 }}</div>
+        <div class="stat-label">Registered Users</div>
+    </div>
+</div>
+
+<div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <a href="{{ url_for('predict') }}" class="btn btn-primary">
+                🔮 Make New Prediction
+            </a>
+            <a href="{{ url_for('compare') }}" class="btn btn-secondary">
+                📊 Compare Model Performance
+            </a>
+            <a href="{{ url_for('insights') }}" class="btn btn-secondary">
+                📈 View Insights & Analytics
+            </a>
+            {% if session.get('role') == 'Admin' %}
+            <a href="{{ url_for('admin') }}" class="btn btn-success">
+                ⚙️ Admin Panel
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Recent Predictions</h3>
+        </div>
+        {% if recent_predictions %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Model</th>
+                        <th>AQI</th>
+                        <th>Category</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pred in recent_predictions[:5] %}
+                    <tr>
+                        <td>{{ pred.createdat.strftime('%d %b %Y, %H:%M') if pred.createdat else 'N/A' }}</td>
+                        <td>{{ pred.modelused }}</td>
+                        <td>{{ "%.1f"|format(pred.predictedaqi) }}</td>
+                        <td>
+                            <span class="aqi-category" style="background: {{ pred.color }}; color: white; padding: 3px 10px; font-size: 0.8rem;">
+                                {{ pred.category }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: var(--aurora-text-secondary); text-align: center; padding: 30px;">
+            No predictions yet. <a href="{{ url_for('predict') }}" class="link">Make your first prediction</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+{% if best_model %}
+<div class="card" style="margin-top: 25px;">
+    <div class="card-header">
+        <h3 class="card-title">Best Performing Model</h3>
+        <span class="badge badge-admin">{{ best_model.name }}</span>
+    </div>
+    <div class="metrics-grid">
+        <div class="metric-item">
+            <div class="metric-value">{{ "%.4f"|format(best_model.metrics.mae) }}</div>
+            <div class="metric-label">MAE</div>
+        </div>
+        <div class="metric-item">
+            <div class="metric-value">{{ "%.4f"|format(best_model.metrics.mse) }}</div>
+            <div class="metric-label">MSE</div>
+        </div>
+        <div class="metric-item">
+            <div class="metric-value">{{ "%.4f"|format(best_model.metrics.rmse) }}</div>
+            <div class="metric-label">RMSE</div>
+        </div>
+        <div class="metric-item">
+            <div class="metric-value">{{ "%.4f"|format(best_model.metrics.r2) }}</div>
+            <div class="metric-label">R² Score</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Predict AQI{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h1>AQI Prediction</h1>
+    <p>Enter environmental parameters to predict Air Quality Index</p>
+</div>
+
+<div class="predict-container">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Input Parameters</h3>
+        </div>
+        
+        <form id="predictForm" method="POST" action="{{ url_for('predict') }}">
+            <div class="form-group model-select">
+                <label for="model">Select Model</label>
+                <select id="model" name="model" class="form-control">
+                    <option value="XGBoost" {% if request.form.get('model') == 'XGBoost' %}selected{% endif %}>XGBoost (Recommended)</option>
+                    <option value="Random Forest" {% if request.form.get('model') == 'Random Forest' %}selected{% endif %}>Random Forest</option>
+                    <option value="Linear Regression" {% if request.form.get('model') == 'Linear Regression' %}selected{% endif %}>Linear Regression</option>
+                </select>
+            </div>
+            
+            <div class="feature-grid">
+                <div class="form-group">
+                    <label for="temperature">Temperature (°C) <span class="required">*</span></label>
+                    <input type="number" step="any" id="temperature" name="temperature" class="form-control" 
+                           placeholder="e.g., 25.5" required value="{{ request.form.get('temperature', '') }}">
+                    <div id="temperature-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="humidity">Humidity (%) <span class="required">*</span></label>
+                    <input type="number" step="any" id="humidity" name="humidity" class="form-control" 
+                           placeholder="e.g., 65.0" required value="{{ request.form.get('humidity', '') }}">
+                    <div id="humidity-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pm2_5">PM2.5 (µg/m³) <span class="required">*</span></label>
+                    <input type="number" step="any" id="pm2_5" name="pm2_5" class="form-control" 
+                           placeholder="e.g., 35.2" required value="{{ request.form.get('pm2_5', '') }}">
+                    <div id="pm2_5-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pm10">PM10 (µg/m³) <span class="required">*</span></label>
+                    <input type="number" step="any" id="pm10" name="pm10" class="form-control" 
+                           placeholder="e.g., 50.0" required value="{{ request.form.get('pm10', '') }}">
+                    <div id="pm10-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="co">CO (mg/m³) <span class="required">*</span></label>
+                    <input type="number" step="any" id="co" name="co" class="form-control" 
+                           placeholder="e.g., 0.8" required value="{{ request.form.get('co', '') }}">
+                    <div id="co-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="no2">NO₂ (µg/m³) <span class="required">*</span></label>
+                    <input type="number" step="any" id="no2" name="no2" class="form-control" 
+                           placeholder="e.g., 25.0" required value="{{ request.form.get('no2', '') }}">
+                    <div id="no2-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="so2">SO₂ (µg/m³) <span class="required">*</span></label>
+                    <input type="number" step="any" id="so2" name="so2" class="form-control" 
+                           placeholder="e.g., 12.0" required value="{{ request.form.get('so2', '') }}">
+                    <div id="so2-error" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="o3">O₃ (µg/m³) <span class="required">*</span></label>
+                    <input type="number" step="any" id="o3" name="o3" class="form-control" 
+                           placeholder="e.g., 40.0" required value="{{ request.form.get('o3', '') }}">
+                    <div id="o3-error" class="error-message"></div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block mt-3">
+                🔮 Predict AQI
+            </button>
+        </form>
+    </div>
+    
+    <div class="card result-card">
+        <div class="card-header">
+            <h3 class="card-title">Prediction Result</h3>
+        </div>
+        
+        {% if prediction %}
+        <div class="aqi-display">
+            <div class="aqi-value" style="color: {{ prediction.color }};">
+                {{ "%.1f"|format(prediction.aqi) }}
+            </div>
+            <div class="aqi-label">Air Quality Index</div>
+            <div class="aqi-category" style="background: {{ prediction.color }}; color: white;">
+                {{ prediction.category }}
+            </div>
+        </div>
+        
+        <div class="health-message">
+            <strong>Health Advisory:</strong><br>
+            {{ prediction.message }}
+        </div>
+        
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(139, 92, 246, 0.2);">
+            <p style="color: var(--aurora-text-secondary); font-size: 0.9rem;">
+                Model Used: <strong>{{ prediction.model }}</strong><br>
+                Prediction Time: <strong>{{ prediction.timestamp }}</strong>
+            </p>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px; color: var(--aurora-text-secondary);">
+            <div style="font-size: 4rem; margin-bottom: 20px;">🌤️</div>
+            <p>Enter the environmental parameters and click "Predict AQI" to see the prediction result.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

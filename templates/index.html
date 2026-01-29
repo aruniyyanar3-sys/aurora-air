@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 60px 20px;">
+    <div style="font-size: 5rem; margin-bottom: 20px;">🌈</div>
+    <h1 style="font-size: 3rem; background: var(--aurora-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px;">
+        Aurora Air
+    </h1>
+    <p style="font-size: 1.3rem; color: var(--aurora-text-secondary); max-width: 600px; margin: 0 auto 40px;">
+        Intelligent Air Pollution Prediction System powered by Machine Learning
+    </p>
+    
+    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+        <a href="{{ url_for('login') }}" class="btn btn-primary" style="padding: 16px 40px; font-size: 1.1rem;">
+            Login to Dashboard
+        </a>
+        <a href="{{ url_for('register') }}" class="btn btn-secondary" style="padding: 16px 40px; font-size: 1.1rem;">
+            Create Account
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-grid" style="margin-top: 60px;">
+    <div class="stat-card">
+        <div class="stat-icon">🔮</div>
+        <div class="stat-label" style="font-size: 1.2rem;">AQI Prediction</div>
+        <p style="color: var(--aurora-text-secondary); margin-top: 10px;">
+            Predict air quality using 8 environmental parameters
+        </p>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-label" style="font-size: 1.2rem;">ML Models</div>
+        <p style="color: var(--aurora-text-secondary); margin-top: 10px;">
+            Linear Regression, Random Forest & XGBoost
+        </p>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-label" style="font-size: 1.2rem;">Data Insights</div>
+        <p style="color: var(--aurora-text-secondary); margin-top: 10px;">
+            Visualize correlations and feature importance
+        </p>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">🛡️</div>
+        <div class="stat-label" style="font-size: 1.2rem;">Secure Platform</div>
+        <p style="color: var(--aurora-text-secondary); margin-top: 10px;">
+            Strict validation and password protection
+        </p>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 60px; text-align: center;">
+    <h2 style="color: var(--aurora-text-primary); margin-bottom: 20px;">Technology Stack</h2>
+    <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; color: var(--aurora-text-secondary);">
+        <span>Flask</span>
+        <span>PostgreSQL</span>
+        <span>XGBoost</span>
+        <span>Scikit-learn</span>
+        <span>Chart.js</span>
+        <span>Plotly</span>
+    </div>
+</div>
+{% endblock %}

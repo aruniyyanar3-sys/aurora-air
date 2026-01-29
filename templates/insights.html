@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Insights{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h1>Data Insights</h1>
+    <p>Explore feature importance, correlations, and data distributions</p>
+</div>
+
+{% if has_data %}
+<div class="insights-grid">
+    <div class="chart-container">
+        <h3 class="chart-title">Feature Importance (XGBoost)</h3>
+        <div id="featureImportanceChart"></div>
+    </div>
+    
+    <div class="chart-container">
+        <h3 class="chart-title">Feature Importance (Random Forest)</h3>
+        <div id="rfFeatureImportanceChart"></div>
+    </div>
+</div>
+
+<div class="chart-container" style="margin-top: 30px;">
+    <h3 class="chart-title">Feature Correlation Heatmap</h3>
+    <div id="correlationHeatmap"></div>
+</div>
+
+<div class="dashboard-grid" style="margin-top: 30px;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Dataset Statistics</h3>
+        </div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Mean</th>
+                        <th>Std</th>
+                        <th>Min</th>
+                        <th>Max</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in data_stats %}
+                    <tr>
+                        <td>{{ stat.feature }}</td>
+                        <td>{{ "%.2f"|format(stat.mean) }}</td>
+                        <td>{{ "%.2f"|format(stat.std) }}</td>
+                        <td>{{ "%.2f"|format(stat.min) }}</td>
+                        <td>{{ "%.2f"|format(stat.max) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">AQI Category Distribution</h3>
+        </div>
+        <canvas id="aqiDistChart" style="max-height: 300px;"></canvas>
+    </div>
+</div>
+
+{% else %}
+<div class="card" style="text-align: center; padding: 60px;">
+    <div style="font-size: 4rem; margin-bottom: 20px;">📈</div>
+    <h3>No Data Available</h3>
+    <p style="color: var(--aurora-text-secondary); margin-bottom: 20px;">
+        Upload a dataset and train models to see insights.
+    </p>
+    {% if session.get('role') == 'Admin' %}
+    <a href="{{ url_for('admin') }}" class="btn btn-primary">Upload Dataset</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if has_data %}
+<script>
+const featureNames = {{ feature_names | safe }};
+const xgbImportance = {{ xgb_importance | safe }};
+const rfImportance = {{ rf_importance | safe }};
+const correlationMatrix = {{ correlation_matrix | safe }};
+const aqiDistribution = {{ aqi_distribution | safe }};
+
+if (xgbImportance && xgbImportance.length > 0) {
+    const xgbData = featureNames.map((name, i) => ({
+        name: name,
+        importance: xgbImportance[i]
+    })).sort((a, b) => b.importance - a.importance);
+
+    Plotly.newPlot('featureImportanceChart', [{
+        type: 'bar',
+        x: xgbData.map(d => d.importance),
+        y: xgbData.map(d => d.name),
+        orientation: 'h',
+        marker: {
+            color: 'rgba(139, 92, 246, 0.8)',
+            line: { color: 'rgba(139, 92, 246, 1)', width: 1 }
+        }
+    }], {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#F5F0FF' },
+        xaxis: { title: 'Importance', gridcolor: 'rgba(139, 92, 246, 0.1)' },
+        yaxis: { gridcolor: 'rgba(139, 92, 246, 0.1)' },
+        margin: { l: 100, r: 20, t: 20, b: 40 }
+    }, { responsive: true });
+} else {
+    document.getElementById('featureImportanceChart').innerHTML = 
+        '<p style="text-align: center; color: var(--aurora-text-secondary); padding: 40px;">Train XGBoost model to see feature importance</p>';
+}
+
+if (rfImportance && rfImportance.length > 0) {
+    const rfData = featureNames.map((name, i) => ({
+        name: name,
+        importance: rfImportance[i]
+    })).sort((a, b) => b.importance - a.importance);
+
+    Plotly.newPlot('rfFeatureImportanceChart', [{
+        type: 'bar',
+        x: rfData.map(d => d.importance),
+        y: rfData.map(d => d.name),
+        orientation: 'h',
+        marker: {
+            color: 'rgba(232, 106, 146, 0.8)',
+            line: { color: 'rgba(232, 106, 146, 1)', width: 1 }
+        }
+    }], {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#F5F0FF' },
+        xaxis: { title: 'Importance', gridcolor: 'rgba(139, 92, 246, 0.1)' },
+        yaxis: { gridcolor: 'rgba(139, 92, 246, 0.1)' },
+        margin: { l: 100, r: 20, t: 20, b: 40 }
+    }, { responsive: true });
+} else {
+    document.getElementById('rfFeatureImportanceChart').innerHTML = 
+        '<p style="text-align: center; color: var(--aurora-text-secondary); padding: 40px;">Train Random Forest model to see feature importance</p>';
+}
+
+if (correlationMatrix && correlationMatrix.length > 0) {
+    Plotly.newPlot('correlationHeatmap', [{
+        type: 'heatmap',
+        z: correlationMatrix,
+        x: featureNames,
+        y: featureNames,
+        colorscale: [
+            [0, 'rgb(139, 92, 246)'],
+            [0.5, 'rgb(46, 31, 51)'],
+            [1, 'rgb(232, 106, 146)']
+        ],
+        showscale: true
+    }], {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#F5F0FF' },
+        margin: { l: 100, r: 20, t: 20, b: 100 },
+        xaxis: { tickangle: 45 }
+    }, { responsive: true });
+} else {
+    document.getElementById('correlationHeatmap').innerHTML = 
+        '<p style="text-align: center; color: var(--aurora-text-secondary); padding: 40px;">Upload dataset to see correlation heatmap</p>';
+}
+
+if (aqiDistribution) {
+    const ctx = document.getElementById('aqiDistChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(aqiDistribution),
+            datasets: [{
+                data: Object.values(aqiDistribution),
+                backgroundColor: [
+                    '#00e400',
+                    '#ffff00',
+                    '#ff7e00',
+                    '#ff0000',
+                    '#8f3f97',
+                    '#7e0023'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#F5F0FF' }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

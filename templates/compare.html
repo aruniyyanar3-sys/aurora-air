@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Models{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h1>Model Comparison</h1>
+    <p>Compare performance metrics across all trained models</p>
+</div>
+
+{% if comparison_data %}
+<div class="chart-container">
+    <h3 class="chart-title">Model Performance Comparison</h3>
+    <canvas id="metricsChart" style="max-height: 400px;"></canvas>
+</div>
+
+<div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+    {% for model in metrics %}
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ model.modelname }}</h3>
+            {% if model.modelname == best_model %}
+            <span class="badge badge-admin">Best</span>
+            {% endif %}
+        </div>
+        <div class="metrics-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="metric-item">
+                <div class="metric-value">{{ "%.4f"|format(model.mae) }}</div>
+                <div class="metric-label">MAE</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ "%.4f"|format(model.mse) }}</div>
+                <div class="metric-label">MSE</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ "%.4f"|format(model.rmse) }}</div>
+                <div class="metric-label">RMSE</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value">{{ "%.4f"|format(model.r2) }}</div>
+                <div class="metric-label">R² Score</div>
+            </div>
+        </div>
+        <p style="margin-top: 15px; color: var(--aurora-text-secondary); font-size: 0.9rem;">
+            Last trained: {{ model.createdat.strftime('%d %b %Y, %H:%M') if model.createdat else 'N/A' }}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="chart-container" style="margin-top: 30px;">
+    <h3 class="chart-title">R² Score Comparison (Higher is Better)</h3>
+    <canvas id="r2Chart" style="max-height: 300px;"></canvas>
+</div>
+
+{% else %}
+<div class="card" style="text-align: center; padding: 60px;">
+    <div style="font-size: 4rem; margin-bottom: 20px;">📊</div>
+    <h3>No Models Trained Yet</h3>
+    <p style="color: var(--aurora-text-secondary); margin-bottom: 20px;">
+        Train some models first to see the comparison charts.
+    </p>
+    {% if session.get('role') == 'Admin' %}
+    <a href="{{ url_for('admin') }}" class="btn btn-primary">Go to Admin Panel</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if comparison_data %}
+<script>
+const comparisonData = {{ comparison_data | safe }};
+
+const metricsCtx = document.getElementById('metricsChart').getContext('2d');
+new Chart(metricsCtx, {
+    type: 'bar',
+    data: {
+        labels: comparisonData.models,
+        datasets: [
+            {
+                label: 'MAE',
+                data: comparisonData.mae,
+                backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                borderColor: 'rgba(139, 92, 246, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'RMSE',
+                data: comparisonData.rmse,
+                backgroundColor: 'rgba(232, 106, 146, 0.7)',
+                borderColor: 'rgba(232, 106, 146, 1)',
+                borderWidth: 1
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                labels: { color: '#F5F0FF' }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: '#C4B5D0' },
+                grid: { color: 'rgba(139, 92, 246, 0.1)' }
+            },
+            y: {
+                ticks: { color: '#C4B5D0' },
+                grid: { color: 'rgba(139, 92, 246, 0.1)' }
+            }
+        }
+    }
+});
+
+const r2Ctx = document.getElementById('r2Chart').getContext('2d');
+new Chart(r2Ctx, {
+    type: 'bar',
+    data: {
+        labels: comparisonData.models,
+        datasets: [{
+            label: 'R² Score',
+            data: comparisonData.r2,
+            backgroundColor: [
+                'rgba(139, 92, 246, 0.7)',
+                'rgba(232, 106, 146, 0.7)',
+                'rgba(255, 179, 71, 0.7)'
+            ],
+            borderColor: [
+                'rgba(139, 92, 246, 1)',
+                'rgba(232, 106, 146, 1)',
+                'rgba(255, 179, 71, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: {
+                ticks: { color: '#C4B5D0' },
+                grid: { color: 'rgba(139, 92, 246, 0.1)' },
+                min: 0,
+                max: 1
+            },
+            y: {
+                ticks: { color: '#C4B5D0' },
+                grid: { color: 'rgba(139, 92, 246, 0.1)' }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
